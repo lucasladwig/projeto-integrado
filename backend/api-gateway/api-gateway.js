@@ -6,8 +6,8 @@ const app = express();
 app.use(logger("dev"));
 
 function selectProxyHost(req) {
-  if (req.path.startsWith("/controle")) return "http://localhost:8080/";
-  else if (req.path.startsWith("/logging")) return "http://localhost:8081/";
+  if (req.path.startsWith("/config")) return "http://localhost:8080/";
+  else if (req.path.startsWith("/registros")) return "http://localhost:8081/";
   else return null;
 }
 
