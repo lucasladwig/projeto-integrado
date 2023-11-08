@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Inicia o Servidor
-let porta = 8080;
+let porta = 8090;
 app.listen(porta, () => {
   console.log("Servidor em execução na porta: " + porta);
 });
@@ -42,34 +42,35 @@ db.run(
 );
 
 // MÉTODOS CRUD HTTP
-// POST /registros - INSERIR registro de leitura do sensor
-app.post("/registros", (req, res) => {
+// POST /logging - INSERIR registro de leitura do sensor
+app.post("/logging", (req, res) => {
+  const distanciaRegistrada = req.body.distancia
   db.run(
     `INSERT INTO registros(distancia) VALUES(?)`,
-    [req.body.distancia],
+    [distanciaRegistrada],
     (err) => {
       if (err) {
         console.log(err);
         res.status(500).send("Erro ao inserir registro de leitura!");
       } else {
         console.log(
-          `Leitura registrada com sucesso! Distância: ${req.body.distancia}cm.`
+          `Leitura registrada com sucesso! Distância: ${distanciaRegistrada}cm.`
         );
         res
           .status(200)
           .send(
-            `Leitura registrada com sucesso! Distância: ${req.body.distancia}cm.`
+            `Leitura registrada com sucesso! Distância: ${distanciaRegistrada}cm.`
           );
       }
     }
   );
 });
 
-// GET /registros - RETORNAR todos os registros de leitura do sensor
-app.get("/registros", (req, res) => {
+// GET /logging - RETORNAR todos os registros de leitura do sensor
+app.get("/logging", (req, res) => {
   db.all(`SELECT * FROM registros`, [], (err, result) => {
     if (err) {
-      console.log(err);
+      console.error(err);
       res.status(500).send("Erro ao obter dados de registros!");
     } else if (result.length === 0) {
       console.log("Lista de registros vazia!");
@@ -81,8 +82,8 @@ app.get("/registros", (req, res) => {
   });
 });
 
-// GET /registros/:data - RETORNAR todoa os registros de uma data YYYY-MM-DD
-app.get("/registros/:data", (req, res) => {
+// GET /logging/:data - RETORNAR todoa os registros de uma data YYYY-MM-DD
+app.get("/logging/:ano-:mes-:dia", (req, res) => {
   // Padrão regex para formato YYYY-MM-DD
   const regexData = /^\d{4}-\d{2}-\d{2}$/;
   const stringData = req.params.data;
@@ -101,10 +102,10 @@ app.get("/registros/:data", (req, res) => {
   }
   db.all(
     `SELECT * FROM registros WHERE data_hora LIKE '?%'`,
-    req.params.data,
+    stringData,
     (err, result) => {
       if (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).send("Erro ao acessar lista de registros!");
       } else if (result == null) {
         console.log(`Nenhum registro encontrado para a data ${stringData}!`);
@@ -119,8 +120,8 @@ app.get("/registros/:data", (req, res) => {
   );
 });
 
-// DELETE /registros/:id - REMOVER um regisro pelo id
-app.delete("/registros/:id", (req, res) => {
+// DELETE /logging/:id - REMOVER um regisro pelo id
+app.delete("/logging/:id", (req, res) => {
   const idRegistro = req.params.id;
   if (isNaN(idRegistro)) {
     res.status(400).send("Erro: id deve ser um número inteiro!");

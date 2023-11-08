@@ -27,13 +27,22 @@ var db = new sqlite3.Database("./dados-config.db", (err) => {
 
 // Cria a tabela 'config' com distância inicial 50cm, caso ela já não exista
 db.run(
-  `CREATE TABLE IF NOT EXISTS config (distancia INTEGER NOT NULL)
-   INSERT INTO config VALUES(50)`,
+  `CREATE TABLE IF NOT EXISTS config (distancia INTEGER NOT NULL)`,
   [],
   (err) => {
     if (err) {
-      console.log("Erro ao tentar criar tabela de configurações!");
+      console.error("Erro ao tentar criar tabela de configurações!");
       throw err;
+    } else {
+      // Inserir valor padrão na nova tabela
+      db.run(`INSERT INTO config(distancia) VALUES(50)`, [], (err) => {
+        if (err) {
+          console.error(
+            "Erro ao tentar inserir valor na tabela de configurações!"
+          );
+          throw err;
+        }
+      });
     }
   }
 );
@@ -49,7 +58,7 @@ app.get("/config", (req, res) => {
       console.log("Tabela de configurações vazia!");
       res.status(500).send("Tabela de configurações vazia!");
     } else {
-      console.log("Tabela de configurações encontrada!");
+      console.log(`Distância de calibração: ${result.distancia}cm`);
       res.status(200).json(result);
     }
   });
@@ -58,14 +67,14 @@ app.get("/config", (req, res) => {
 // PATCH /controle - BLOQUEIA OU DESBLOQUEIA o patinete com base no serial
 app.patch("/config", (req, res) => {
   // Checar tipo e valores da distancia inserida
-  const distanciaNova = parseInt(req.body.distancia)
+  const distanciaNova = parseInt(req.body.distancia);
   if (isNaN(distanciaNova)) {
     res.status(400).send("Erro: distância deve ser um número inteiro!");
-    console.log("Erro: distância deve ser um número inteiro!")
+    console.log("Erro: distância deve ser um número inteiro!");
     return;
-  } else if (distanciaNova < 30 || distanciaNova > 120) {
-    res.status(400).send("Erro: distância deve ser um número entre 30 e 120!");
-    console.log("Erro: distância deve ser um número entre 30 e 120!")
+  } else if (distanciaNova < 50 || distanciaNova > 150) {
+    res.status(400).send("Erro: distância deve ser um número entre 50 e 150!");
+    console.log("Erro: distância deve ser um número entre 50 e 150!");
     return;
   }
 
