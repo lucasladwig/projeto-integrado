@@ -57,10 +57,23 @@ app.get("/config", (req, res) => {
 
 // PATCH /controle - BLOQUEIA OU DESBLOQUEIA o patinete com base no serial
 app.patch("/config", (req, res) => {
+  // Checar tipo e valores da distancia inserida
+  const distanciaNova = parseInt(req.body.distancia)
+  if (isNaN(distanciaNova)) {
+    res.status(400).send("Erro: distância deve ser um número inteiro!");
+    console.log("Erro: distância deve ser um número inteiro!")
+    return;
+  } else if (distanciaNova < 30 || distanciaNova > 120) {
+    res.status(400).send("Erro: distância deve ser um número entre 30 e 120!");
+    console.log("Erro: distância deve ser um número entre 30 e 120!")
+    return;
+  }
+
+  // Alterar configuração na tabela
   db.run(
     `UPDATE config 
         SET distancia = COALESCE(?, distancia)`,
-    [req.body.distancia],
+    [distanciaNova],
     function (err) {
       if (err) {
         console.error(err);
@@ -70,12 +83,12 @@ app.patch("/config", (req, res) => {
         res.status(404).send("Configuração não foi encontrada!");
       } else {
         console.log(
-          `Distância de calibração do sensor alterada para ${req.body.distancia}cm!`
+          `Distância de calibração do sensor alterada para ${distanciaNova}cm!`
         );
         res
           .status(200)
           .send(
-            `Distância de calibração do sensor alterada para ${req.body.distancia}cm!`
+            `Distância de calibração do sensor alterada para ${distanciaNova}cm!`
           );
       }
     }

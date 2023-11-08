@@ -27,19 +27,19 @@ var db = new sqlite3.Database("./dados-usuario.db", (err) => {
 
 // Cria a tabela 'registros', caso ela não exista
 db.run(
-    `CREATE TABLE IF NOT EXISTS registros (
+  `CREATE TABLE IF NOT EXISTS registros (
       id INTEGER PRIMARY KEY NOT NULL UNIQUE,
-      inicio TEXT DEFAULT CURRENT_TIMESTAMP,
+      data_hora TEXT DEFAULT CURRENT_TIMESTAMP,
       distancia INTEGER NOT NULL
     )`,
-    [],
-    (err) => {
-      if (err) {
-        console.error("Erro ao tentar criar tabela de registros!");
-        throw err;
-      }
+  [],
+  (err) => {
+    if (err) {
+      console.error("Erro ao tentar criar tabela de registros!");
+      throw err;
     }
-  );
+  }
+);
 
 // MÉTODOS CRUD HTTP
 // POST /registros - INSERIR registro de leitura do sensor
@@ -52,93 +52,91 @@ app.post("/registros", (req, res) => {
         console.log(err);
         res.status(500).send("Erro ao inserir registro de leitura!");
       } else {
-        console.log(`Leitura registrada com sucesso! Distância: ${req.body.distancia}cm.`);
+        console.log(
+          `Leitura registrada com sucesso! Distância: ${req.body.distancia}cm.`
+        );
         res
           .status(200)
-          .send(`Leitura registrada com sucesso! Distância: ${req.body.distancia}cm.`);
+          .send(
+            `Leitura registrada com sucesso! Distância: ${req.body.distancia}cm.`
+          );
       }
     }
   );
 });
-// CONTINUAR AQUI!!!
-// GET /registros - RETORNAR todos os usuários
+
+// GET /registros - RETORNAR todos os registros de leitura do sensor
 app.get("/registros", (req, res) => {
   db.all(`SELECT * FROM registros`, [], (err, result) => {
     if (err) {
       console.log(err);
-      res.status(500).send("Erro ao obter dados de usuários!");
+      res.status(500).send("Erro ao obter dados de registros!");
     } else if (result.length === 0) {
-      console.log("Lista de usuários vazia!");
-      res.status(500).send("Lista de usuários vazia!");
+      console.log("Lista de registros vazia!");
+      res.status(500).send("Lista de registros vazia!");
     } else {
-      console.log("Lista de usuários encontrada!");
+      console.log("Lista de registros encontrada!");
       res.status(200).json(result);
     }
   });
 });
 
-// GET /registros/:cpf - RETORNAR usuário com base no CPF
-app.get("/registros/:cpf", (req, res) => {
-  db.get(
-    `SELECT * FROM usuario WHERE cpf = ?`,
-    req.params.cpf,
+// GET /registros/:data - RETORNAR todoa os registros de uma data YYYY-MM-DD
+app.get("/registros/:data", (req, res) => {
+  // Padrão regex para formato YYYY-MM-DD
+  const regexData = /^\d{4}-\d{2}-\d{2}$/;
+  const stringData = req.params.data;
+
+  // Checa se a data na URL é um formato válido
+  if (!stringData.match(regexData)) {
+    res
+      .status(400)
+      .send(
+        `${stringData} não é um formato válido de data! Favor enviar requisição no formato YYYY-MM-DD.`
+      );
+    console.error(
+      `${stringData} não é um formato válido de data! Favor enviar requisição no formato YYYY-MM-DD.`
+    );
+    return;
+  }
+  db.all(
+    `SELECT * FROM registros WHERE data_hora LIKE '?%'`,
+    req.params.data,
     (err, result) => {
       if (err) {
         console.log(err);
-        res.status(500).send("Erro ao acessar lista de usuários!");
+        res.status(500).send("Erro ao acessar lista de registros!");
       } else if (result == null) {
-        console.log(`Usuário cpf ${req.params.cpf} não encontrado!`);
-        res.status(404).send(`Usuário cpf ${req.params.cpf} não encontrado!`);
+        console.log(`Nenhum registro encontrado para a data ${stringData}!`);
+        res
+          .status(404)
+          .send(`Nenhum registro encontrado para a data ${stringData}!`);
       } else {
-        console.log(`Usuário cpf ${req.params.cpf} encontrado!`);
+        console.log(`Registros da data ${stringData} encontrados!`);
         res.status(200).json(result);
       }
     }
   );
 });
 
-// PATCH /registros/:cpf - ALTERAR o cadastro de um usuário
-app.patch("/registros/:cpf", (req, res) => {
-  db.run(
-    `UPDATE usuario 
-        SET nome = COALESCE(?, nome), 
-        email = COALESCE(?, email),
-        telefone = COALESCE(?, telefone)
-        WHERE cpf = ?`,
-    [req.body.nome, req.body.email, req.body.telefone, req.params.cpf],
-    function (err) {
-      if (err) {
-        console.error(err);
-        res
-          .status(500)
-          .send(`Erro ao alterar dados do usuário cpf ${req.params.cpf}!`);
-      } else if (this.changes == 0) {
-        console.log(`Usuário cpf ${req.params.cpf} não encontrado!`);
-        res.status(404).send(`Usuário cpf ${req.params.cpf} não encontrado!`);
-      } else {
-        console.log(`Usuário cpf ${req.params.cpf} alterado com sucesso!`);
-        res
-          .status(200)
-          .send(`Usuário cpf ${req.params.cpf} alterado com sucesso!`);
-      }
-    }
-  );
-});
-
-// DELETE /registros/:cpf - REMOVER um usuário do cadastro
-app.delete("/registros/:cpf", (req, res) => {
-  db.run(`DELETE FROM usuario WHERE cpf = ?`, req.params.cpf, function (err) {
+// DELETE /registros/:id - REMOVER um regisro pelo id
+app.delete("/registros/:id", (req, res) => {
+  const idRegistro = req.params.id;
+  if (isNaN(idRegistro)) {
+    res.status(400).send("Erro: id deve ser um número inteiro!");
+    console.log("Erro: id deve ser um número inteiro!");
+    return;
+  }
+  db.run(`DELETE FROM registros WHERE id = ?`, idRegistro, function (err) {
     if (err) {
       console.error(err);
-      res.status(500).send(`Erro ao remover usuário cpf ${req.params.cpf}!`);
+      res.status(500).send(`Erro ao remover registro id ${idRegistro}!`);
     } else if (this.changes == 0) {
-      console.log(`Usuário cpf ${req.params.cpf} não encontrado!`);
-      res.status(404).send(`Usuário cpf ${req.params.cpf} não encontrado!`);
+      console.log(`Registro id ${idRegistro} não encontrado!`);
+      res.status(404).send(`Registro id ${idRegistro} não encontrado!`);
     } else {
-      console.log(`Usuário cpf ${req.params.cpf} removido com sucesso!`);
-      res
-        .status(200)
-        .send(`Usuário cpf ${req.params.cpf} removido com sucesso!`);
+      console.log(`Registro id ${idRegistro} removido com sucesso!`);
+      res.status(200).send(`Registro id ${idRegistro} removido com sucesso!`);
     }
   });
 });
