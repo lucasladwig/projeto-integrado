@@ -44,7 +44,7 @@ db.run(
 // MÉTODOS CRUD HTTP
 // POST /logging - INSERIR registro de leitura do sensor
 app.post("/logging", (req, res) => {
-  const distanciaRegistrada = req.body.distancia
+  const distanciaRegistrada = req.body.distancia;
   db.run(
     `INSERT INTO registros(distancia) VALUES(?)`,
     [distanciaRegistrada],
@@ -82,8 +82,29 @@ app.get("/logging", (req, res) => {
   });
 });
 
+// GET /logging/ultimo - RETORNAR ultimo registro de leitura do sensor
+app.get("/logging/ultimo", (req, res) => {
+  db.get(
+    `SELECT * FROM registros 
+          ORDER BY id DESC LIMIT 1`,
+    [],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Erro ao obter dados de registros!");
+      } else if (result.length === 0) {
+        console.log("Lista de registros vazia!");
+        res.status(500).send("Lista de registros vazia!");
+      } else {
+        console.log("Lista de registros encontrada!");
+        res.status(200).json(result);
+      }
+    }
+  );
+});
+
 // GET /logging/:data - RETORNAR todoa os registros de uma data YYYY-MM-DD
-app.get("/logging/:ano-:mes-:dia", (req, res) => {
+app.get("/logging/:data", (req, res) => {
   // Padrão regex para formato YYYY-MM-DD
   const regexData = /^\d{4}-\d{2}-\d{2}$/;
   const stringData = req.params.data;
@@ -101,13 +122,13 @@ app.get("/logging/:ano-:mes-:dia", (req, res) => {
     return;
   }
   db.all(
-    `SELECT * FROM registros WHERE data_hora LIKE '?%'`,
-    stringData,
+    `SELECT * FROM registros WHERE date(data_hora) = date(?)`,
+    [stringData],
     (err, result) => {
       if (err) {
         console.error(err);
         res.status(500).send("Erro ao acessar lista de registros!");
-      } else if (result == null) {
+      } else if (result.length === 0) {
         console.log(`Nenhum registro encontrado para a data ${stringData}!`);
         res
           .status(404)
@@ -128,7 +149,7 @@ app.delete("/logging/:id", (req, res) => {
     console.log("Erro: id deve ser um número inteiro!");
     return;
   }
-  db.run(`DELETE FROM registros WHERE id = ?`, idRegistro, function (err) {
+  db.run(`DELETE FROM registros WHERE id = ?`, idRegistro, (err) => {
     if (err) {
       console.error(err);
       res.status(500).send(`Erro ao remover registro id ${idRegistro}!`);
