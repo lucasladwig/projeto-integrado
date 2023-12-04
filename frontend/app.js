@@ -35,7 +35,7 @@ export default function App() {
   const pegarUltimaMedicao = async () => {
     try {
       const response = await axios.get("http://192.168.1.5:8000/logging/ultimo");
-      console.log("Ultimo valor:", response.data);
+      // console.log("Última distância:", `${response.data.distancia}cm`);
       setUltimaMedicao(response.data.distancia);
     } catch (error) {
       console.error("Error fetching latest value:", error);
