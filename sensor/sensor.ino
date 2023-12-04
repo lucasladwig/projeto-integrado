@@ -10,7 +10,7 @@ const String endpoint = "/logging";
 const String server = "localhost:8090";
 const String host = "localhost";
 const String portPOST = "8090";
-const int portGET = "8080";
+const int portGET = 8080;
 const String pathPOST = "/logging";
 const String pathGET = "/config";
 const String SSID = "PREDO";
@@ -63,15 +63,34 @@ void setup()
 // INICIA AS LEITURAS E LÓGICAS DO SISTEMA
 void loop()
 {
-  if (esp8266.available())  // Verifica se o ESP8266 esta enviando dados
-  {
-    String receivedData = esp8266.readStringUntil("\r");  // Lê os dados recebidos até o retorno de carro (\r) mandado no param de 192.168.0.185
-    //Serial.print(receivedData);
-    //receiveData(receivedData);
-    //sendGETRequest(host, portGET, pathGET);
-    
+  // if (esp8266.available())  // Verifica se o ESP8266 esta enviando dados
+  // {
+  //   String receivedData = esp8266.readStringUntil("\r");  // Lê os dados recebidos até o retorno de carro (\r) mandado no param de 192.168.0.185
+  //   //Serial.print(receivedData);
+  //   //receiveData(receivedData);
+  // }
 
+  // String teste = sendGETRequest(host, portGET, pathGET);
+  // Serial.print(teste);
+
+  sendData("AT+HTTPCLIENT=2,0,\"http://2804:14d:baa0:9b19:2d27:2561:c04a:acb7:8080/config\"", 5000, DEBUG);
+
+  esp8266.println("AT+CIPSTART=4,\"TCP\",\"2804:14d:baa0:9b19:2d27:2561:c04a:acb7\",8080");
+  delay(1000);
+  while (esp8266.available()) {
+    Serial.println(esp8266.readStringUntil('\n')); 
   }
+  
+  String cmd = "GET / HTTP/1.1\r\nHost: 2804:14d:baa0:9b19:2d27:2561:c04a:acb7:8080/config\r\nConnection: close\r\n\r\n";
+  esp8266.println("AT+CIPSEND=4," + String(cmd.length() + 4));
+
+  esp8266.println(cmd);
+  delay(1000);
+  esp8266.println(""); 
+  if (esp8266.available()) {
+    Serial.write(esp8266.read());
+  }
+
 
   // Dispara o método que calcula a distância medida pelo sensor e imprime na tela
   hcsr04();
@@ -81,7 +100,9 @@ void loop()
 
 
   String dados = "{\"distancia\": " + resultado + "}";
-  sendPOSTRequest(host, portPOST, pathPOST, dados);
+  //sendPOSTRequest(host, portPOST, pathPOST, dados);
+
+  //sendPOSTRequestTESTE(dados);
 
   // Define em qual distância o buzzer começa a emitir som
   if (distancia <= (valorPot / 20) + 30) // A distancia do sensor varia de 30-80cm
@@ -227,35 +248,44 @@ void sendPOSTRequest(String host, String portPOST, String pathPOST, String data)
 
 
 String sendGETRequest(String host, int portGET, String pathGET) {
-  String request = "AT+CIPSTART=\"TCP\",\"";
-  request += host;
-  request += "\",";
-  request += String(portGET);
-  request += "\r\n";
-  
-  sendData(request, 1000, false); // Estabelece a conexão TCP/IP
-  
-  String getRequest = "GET ";
-  getRequest += pathGET;
-  getRequest += " HTTP/1.1\r\nHost: ";
-  getRequest += host;
-  getRequest += ":";
-  getRequest += String(portGET);
-  getRequest += "\r\nConnection: close\r\n\r\n";
-  
-  sendData("AT+CIPSEND=" + String(getRequest.length()), 1000, false); // Prepara para enviar a solicitação GET
-  
-  sendData(getRequest, 5000, false); // Envia a solicitação GET
-  
-  // Aguarda e lê a resposta do servidor
-  String response = "";
+  // String requisicaoGET = "GET /config HTTP/1.1\r\nHost: 2804:14d:baa0:9b19:2d27:2561:c04a:acb7:8080\r\n\r\n";
+  // int tamanhoRequisicao = requisicaoGET.length();
+
+  // Serial.println("Enviando requisição GET...");
+  // esp8266.print("AT+CIPSEND=");
+  // esp8266.println(tamanhoRequisicao);
+  // delay(2000);
+
+  // esp8266.println(requisicaoGET);
+  // delay(10000);
+  // while (esp8266.available()) {
+  //     // The esp has data so display its output to the serial window
+  //     char c = esp8266.read();  // read the next character.
+  //     Serial.print(c);
+  //   }
+  esp8266.print("AT+HTTPCLIENT=2,0,\"http://2804:14d:baa0:9b19:2d27:2561:c04a:acb7:8080/config\",,,2");
   while (esp8266.available()) {
-    char c = esp8266.read();
-    response += c;
+    // The esp has data so display its output to the serial window
+    char c = esp8266.read();  // read the next character.
+    Serial.print(c);
   }
-  
-  sendData("AT+CIPCLOSE", 1000, false); // Fecha a conexão
-  Serial.print(response);
-  
-  return response;
+}
+
+
+
+
+void sendPOSTRequestTESTE(String postMessage)
+{
+    unsigned int l=postMessage.length();
+    esp8266.print("AT+CIPSEND=");
+    esp8266.println(l);
+    Serial.println(esp8266.readString());
+    esp8266.println("PUT /logging HTTP/1.1");//Need this to change to POST or atleast allow sending JSON object
+    esp8266.println("Host:localhost:8090");
+    esp8266.print("Content-Length: ");
+    esp8266.println(String(postMessage.length()));
+    Serial.println(esp8266.readString());
+    esp8266.println();
+    esp8266.println(postMessage);//Probably an issue with this one
+    delay(10000);
 }
