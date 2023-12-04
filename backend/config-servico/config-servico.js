@@ -48,7 +48,7 @@ db.run(
 );
 
 // MÉTODOS HTTP
-// GET /controle - Retorna o valor de distância (cm) de calibração
+// GET /config - Retorna o valor de distância (cm) de calibração
 app.get("/config", (req, res) => {
   db.get(`SELECT distancia FROM config`, [], (err, result) => {
     if (err) {
@@ -64,7 +64,7 @@ app.get("/config", (req, res) => {
   });
 });
 
-// PATCH /controle - BLOQUEIA OU DESBLOQUEIA o patinete com base no serial
+// PATCH /config - Altera o valor de distância (cm) de calibração
 app.patch("/config", (req, res) => {
   // Checar tipo e valores da distancia inserida
   const distanciaNova = parseInt(req.body.distancia);
