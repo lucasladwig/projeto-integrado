@@ -7,7 +7,8 @@ export default function App() {
   const [minValue, maxValue] = [50, 150];
   const [sliderValue, setSliderValue] = useState(100);
   const [ultimaMedicao, setUltimaMedicao] = useState(null);
-  const baseURL = "http://192.168.1.5:8000"
+  // const baseURL = "http://150.162.219.26:8000"
+  const baseURL = "http://192.168.18.53:8000"
 
   // Atualiza valor na tela conforme slider
   const handleSliderChange = (valor) => {

@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const os = require("os");
+// const os = require("os");
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
@@ -8,10 +8,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 let porta = 8080;
 app.listen(porta, () => {
-  const redes = os.networkInterfaces();
-  const ip = redes['Ethernet'][1].address; // Altere 'Wi-Fi' para o nome da sua interface de rede
+  //const redes = os.networkInterfaces();
+  //const ip = redes['Ethernet'][1].address; // Altere 'Wi-Fi' para o nome da sua interface de rede
 
-  console.log("Servidor em execução em: http://" + ip + ":" + porta);
+  console.log("Servidor em execução em na porta 8080");
 });
 
 // Importa o package do SQLite
